@@ -66,6 +66,8 @@ const CSV_COLUMNS = [
   "dismissal_latency_ms",
   "keep",
   "line_placement",
+  "revised_placement",
+  "revision_shift",
   "novelty_gap",
   "familiarity",
   "why",
@@ -120,6 +122,13 @@ export function sessionsToCsv(sessions: Session[]): string {
         dismissal_latency_ms: dismissalLatencyMs(card) ?? "",
         keep: card.keep === null ? "" : card.keep,
         line_placement: card.linePlacement ?? "",
+        revised_placement: card.revisedPlacement ?? "",
+        revision_shift:
+          card.revisedPlacement !== null &&
+          card.revisedPlacement !== undefined &&
+          card.linePlacement !== null
+            ? card.revisedPlacement - card.linePlacement
+            : "",
         novelty_gap: noveltyGap(card) ?? "",
         familiarity: card.familiarity ?? "",
         why: card.why,

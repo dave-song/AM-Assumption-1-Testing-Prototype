@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { StepProps } from "./types";
 import { downloadJSON, saveLocal, syncRemote } from "@/lib/session";
+import { ResultsRange } from "@/components/ui/ResultsRange";
 
 // Step 7 — Done (spec 5.7). Mark finished, autosave + sync, offer a JSON
 // export escape hatch, and return to setup for the next participant.
@@ -24,11 +25,26 @@ export default function Done({ session, setSession, now }: StepProps) {
   }, []);
 
   return (
-    <div className="mx-auto max-w-xl space-y-6 text-center">
-      <h2 className="font-mono text-lg text-wire-ink">Thank you.</h2>
-      <p className="font-mono text-sm text-wire-muted">
-        That&apos;s everything. Your responses have been saved.
-      </p>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <div className="space-y-3 text-center">
+        <h2 className="font-mono text-lg text-wire-ink">Thank you.</h2>
+        <p className="font-mono text-sm text-wire-muted">
+          That&apos;s everything. Your responses have been saved.
+        </p>
+      </div>
+
+      <ResultsRange
+        session={session}
+        editable
+        onRevise={(cardId, placement) =>
+          setSession((s) => ({
+            ...s,
+            cards: s.cards.map((c) =>
+              c.cardId === cardId ? { ...c, revisedPlacement: placement } : c,
+            ),
+          }))
+        }
+      />
 
       <div className="flex flex-col items-center gap-3">
         <button className="wire-btn" onClick={() => downloadJSON(session)}>
@@ -42,7 +58,7 @@ export default function Done({ session, setSession, now }: StepProps) {
         </button>
       </div>
 
-      <p className="font-mono text-[11px] text-wire-muted">
+      <p className="text-center font-mono text-[11px] text-wire-muted">
         Session ID: {session.id}
       </p>
     </div>

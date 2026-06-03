@@ -32,6 +32,7 @@ function emptyCardResponse(cardId: string, position: number): CardResponse {
     announcementDismissedAt: null,
     keep: null,
     linePlacement: null,
+    revisedPlacement: null,
     familiarity: null,
     why: "",
     disambiguation: null,

@@ -134,8 +134,9 @@ server:
 - **No Supabase configured (default):** the server uses a local JSON file
   (`.data/sessions.json`). Perfect for a single moderated laptop. Note that on a
   serverless host this file is ephemeral — configure Supabase for hosted runs.
-- **Supabase configured:** sessions upsert to a `sessions` table over Supabase's
-  auto REST API (no extra SDK). Create the table with:
+- **Supabase configured (required for hosting):** sessions upsert to a
+  `sessions` table over Supabase's auto REST API (no extra SDK). Create the
+  table with:
 
   ```sql
   create table sessions (
@@ -146,6 +147,10 @@ server:
     updated_at timestamptz
   );
   ```
+
+The `/admin` page shows a **storage status banner**: green "● storage ok" when
+Supabase is connected, or a red "▲ storage warning" when it's on the
+non-durable file store — check it before running hosted sessions.
 
 ---
 
@@ -222,13 +227,51 @@ drag-and-drop. No state library — React state plus an autosave hook.
 
 ---
 
-## Deploy (Vercel)
+## Deploy (Vercel) — hosted / remote participants
 
-1. Push to GitHub and import into Vercel.
-2. Set env vars (`ADMIN_KEY`, `FACILITATOR_KEY`, and Supabase vars for hosted
-   persistence — the file store is ephemeral on serverless).
-3. Deploy and open the production URL on the session device in full screen.
-4. Smoke-test a dummy session and confirm the export contains every field.
+For remote participants you **must** use Supabase. Without it, Vercel's
+ephemeral filesystem silently drops every session.
+
+1. **Create a Supabase project** (free tier). In the SQL editor, create the
+   `sessions` table (SQL above). Leave row-level security off, or rely on the
+   service_role key, which bypasses it.
+2. **Grab credentials** — Project Settings → API: the **Project URL** and the
+   **`service_role`** key (under "Project API keys").
+3. **Push to GitHub and import into Vercel.**
+4. **Set environment variables** in Vercel (Project → Settings → Environment
+   Variables), for Production (and Preview if you test there):
+
+   | Variable | Value |
+   |---|---|
+   | `ADMIN_KEY` | your secret for `/admin` |
+   | `FACILITATOR_KEY` | your secret for the in-session panel |
+   | `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+   | `SUPABASE_SERVICE_KEY` | the `service_role` key (keep secret — no `NEXT_PUBLIC_`) |
+   | `NEXT_PUBLIC_FACILITATOR_REQUIRED` | `true` |
+
+5. **Deploy.** Then open `https://<app>.vercel.app/admin`, log in with
+   `ADMIN_KEY`, and confirm the banner reads **"● storage ok — Connected to
+   Supabase."** If it's red, the env vars or table are wrong — fix before
+   running participants. (Changing env vars requires a redeploy to take effect.)
+6. **Smoke-test** a full dummy session in Chrome/Safari, then check it appears
+   in `/admin` and the export contains every field.
+
+### Getting the data out
+
+The moderator never touches the participants' devices. Run sessions, then at
+`/admin`:
+
+- **Export all JSON** → one `.json` file with every session (the full records,
+  including the hidden team-coded properties). This is your "JSON file after."
+- **Export CSV** / **Server CSV** → flattened, one row per card response, for
+  analysis in a spreadsheet.
+
+Both pull live from Supabase, so they include remote participants. You can also
+browse the raw rows in Supabase's Table Editor.
+
+**Voice input** works on the deployed HTTPS URL too (Chrome/Safari). **Mic +
+HTTPS:** Vercel is HTTPS, so dictation works for remote participants in
+supported browsers; it stays disabled in Brave/Arc/Firefox and they type.
 
 ---
 

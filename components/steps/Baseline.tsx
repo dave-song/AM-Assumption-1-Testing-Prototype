@@ -26,7 +26,8 @@ export default function Baseline({ session, setSession, onNext, now }: StepProps
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <p className="font-mono text-sm text-wire-muted">
-        Take a moment to look around this music app. Tap anything you like.
+        Take a moment to look around this music app. Tap anything you&apos;d
+        like to use.
       </p>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

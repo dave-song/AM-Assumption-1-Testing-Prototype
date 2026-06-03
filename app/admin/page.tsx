@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Session } from "@/types";
 import { listLocal, STEPS } from "@/lib/session";
+import type { StoreHealth } from "@/lib/store";
 import {
   dismissalLatencyMs,
   noveltyGap,
@@ -40,6 +41,7 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [store, setStore] = useState<StoreHealth | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -53,8 +55,12 @@ export default function AdminPage() {
         return;
       }
       if (res.ok) {
-        const data = (await res.json()) as { sessions: Session[] };
+        const data = (await res.json()) as {
+          sessions: Session[];
+          store?: StoreHealth;
+        };
         server = data.sessions ?? [];
+        setStore(data.store ?? null);
       }
     } catch {
       // server unavailable — fall back to local only
@@ -158,6 +164,23 @@ export default function AdminPage() {
         </div>
       </header>
 
+      {/* Backend status — confirms participant data is being saved durably.
+          On a hosted deploy this MUST read "Connected to Supabase". */}
+      {store ? (
+        <div
+          className={`mb-6 border p-3 font-mono text-xs ${
+            store.durable
+              ? "border-wire-line bg-wire-box text-wire-ink"
+              : "border-red-600 bg-red-50 text-red-700"
+          }`}
+        >
+          <strong>
+            {store.durable ? "● storage ok" : "▲ storage warning"}
+          </strong>{" "}
+          — {store.detail}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[260px_1fr]">
         {/* Session list */}
         <aside className="space-y-1">
@@ -237,7 +260,10 @@ function SessionDetail({ session: s }: { session: Session }) {
                 <Th>#</Th>
                 <Th>card</Th>
                 <Th>keep</Th>
-                <Th>line</Th>
+                <Th title="first gut-reaction placement">line</Th>
+                <Th title="re-placement made on the Done debrief, and the shift">
+                  revised
+                </Th>
                 <Th>fam</Th>
                 <Th>disambig</Th>
                 <Th>dismiss</Th>
@@ -263,6 +289,19 @@ function SessionDetail({ session: s }: { session: Session }) {
                       {c.keep === null ? "—" : c.keep ? "keep" : "kill"}
                     </Td>
                     <Td>{c.linePlacement ?? "—"}</Td>
+                    <Td>
+                      {c.revisedPlacement === null ||
+                      c.revisedPlacement === undefined ? (
+                        "—"
+                      ) : (
+                        <span className="text-wire-ink">
+                          {c.revisedPlacement}
+                          {c.linePlacement !== null
+                            ? ` (${c.revisedPlacement - c.linePlacement >= 0 ? "+" : ""}${c.revisedPlacement - c.linePlacement})`
+                            : ""}
+                        </span>
+                      )}
+                    </Td>
                     <Td>{c.familiarity ?? "—"}</Td>
                     <Td>{c.disambiguation ?? "—"}</Td>
                     <Td>{fmtMs(dismissalLatencyMs(c))}</Td>

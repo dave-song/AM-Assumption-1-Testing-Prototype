@@ -149,6 +149,9 @@ export default function CardLoop({
       announcementDismissedAt: dismissedAt,
       keep,
       linePlacement: placement,
+      // Revision happens later (Done debrief); preserve any existing value.
+      revisedPlacement:
+        session.cards.find((c) => c.cardId === cardId)?.revisedPlacement ?? null,
       familiarity,
       why: why.trim(),
       disambiguation: showDisambig ? disambig : null,

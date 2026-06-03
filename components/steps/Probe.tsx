@@ -82,8 +82,8 @@ export default function Probe({ session, setSession, onNext }: StepProps) {
         <div className="flex gap-2">
           {(
             [
-              ["top", "The one you liked most"],
-              ["crossed", "Any that crossed a line"],
+              ["top", "The one you'd most like to use"],
+              ["crossed", "Any that felt too social"],
               ["disliked", "Any you'd skip"],
             ] as [Mode, string][]
           ).map(([m, label]) => (
@@ -120,7 +120,7 @@ export default function Probe({ session, setSession, onNext }: StepProps) {
         )}
 
         <p className="font-mono text-xs text-wire-muted">
-          Top pick: {topName ?? "—"} · Crossed a line: {crossed.length} ·
+          Would most use: {topName ?? "—"} · Felt too social: {crossed.length} ·
           Would skip: {disliked.length}
         </p>
       </div>
@@ -129,8 +129,8 @@ export default function Probe({ session, setSession, onNext }: StepProps) {
       <div className="space-y-4">
         {(
           [
-            ["topWhy", "What made the top one feel right here?"],
-            ["crossedWhy", "What crossed a line on the one you turned off first?"],
+            ["topWhy", "What made the one you'd use feel right here?"],
+            ["crossedWhy", "What felt too social on the one you turned off first?"],
             [
               "watchedFeeling",
               "Did anything make you feel watched or expected to respond?",

@@ -44,7 +44,10 @@ export interface CardResponse {
   announcementFiredAt: number | null;
   announcementDismissedAt: number | null; // dismissal latency = hesitation signal
   keep: boolean | null; // true = keep, false = kill
-  linePlacement: number | null; // 0 (just me) .. 100 (other people)
+  linePlacement: number | null; // 0 (just me) .. 100 (other people) — first gut reaction
+  // Optional re-placement made on the Done debrief, after the participant has
+  // seen all cards. null = they didn't move it from its original spot.
+  revisedPlacement: number | null;
   familiarity: number | null; // 1 .. 5
   why: string;
   disambiguation: "others" | "unfamiliar" | null;

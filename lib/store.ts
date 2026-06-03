@@ -53,11 +53,17 @@ async function sbUpsert(session: Session): Promise<void> {
       updated_at: new Date().toISOString(),
     },
   ];
-  await fetch(`${SUPABASE_URL}/rest/v1/sessions?on_conflict=id`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?on_conflict=id`, {
     method: "POST",
     headers: { ...sbHeaders(), Prefer: "resolution=merge-duplicates" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    // Throw so the failure is visible in Vercel logs / the API response,
+    // rather than silently dropping a participant's data.
+    throw new Error(`Supabase upsert failed (${res.status}): ${detail.slice(0, 300)}`);
+  }
 }
 
 async function sbGet(id: string): Promise<Session | null> {
@@ -65,6 +71,10 @@ async function sbGet(id: string): Promise<Session | null> {
     `${SUPABASE_URL}/rest/v1/sessions?id=eq.${id}&select=data`,
     { headers: sbHeaders() },
   );
+  if (!res.ok) {
+    console.error("[store] Supabase get failed", res.status, await res.text().catch(() => ""));
+    return null;
+  }
   const rows = (await res.json()) as { data: Session }[];
   return rows[0]?.data ?? null;
 }
@@ -74,8 +84,56 @@ async function sbList(): Promise<Session[]> {
     `${SUPABASE_URL}/rest/v1/sessions?select=data&order=created_at.desc`,
     { headers: sbHeaders() },
   );
+  if (!res.ok) {
+    throw new Error(`Supabase list failed (${res.status}): ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  }
   const rows = (await res.json()) as { data: Session }[];
   return rows.map((r) => r.data);
+}
+
+// ---- Health (surfaced in the admin view) ----------------------------------
+export interface StoreHealth {
+  mode: "supabase" | "file";
+  ok: boolean;
+  durable: boolean; // false = data won't survive on a serverless host
+  detail: string;
+}
+
+export async function storeHealth(): Promise<StoreHealth> {
+  if (!usingSupabase) {
+    return {
+      mode: "file",
+      ok: true,
+      durable: false,
+      detail:
+        "Local JSON file store. Fine on a single laptop, but NOT durable on Vercel — configure Supabase for hosted sessions.",
+    };
+  }
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sessions?select=id&limit=1`,
+      { headers: sbHeaders() },
+    );
+    if (!res.ok) {
+      return {
+        mode: "supabase",
+        ok: false,
+        durable: false,
+        detail: `Supabase reachable but query failed (${res.status}): ${(await res
+          .text()
+          .catch(() => ""))
+          .slice(0, 200)}. Check the table exists and the key is the service_role key.`,
+      };
+    }
+    return { mode: "supabase", ok: true, durable: true, detail: "Connected to Supabase." };
+  } catch (e) {
+    return {
+      mode: "supabase",
+      ok: false,
+      durable: false,
+      detail: `Could not reach Supabase: ${e instanceof Error ? e.message : String(e)}. Check SUPABASE_URL.`,
+    };
+  }
 }
 
 // ---- Public API ------------------------------------------------------------
