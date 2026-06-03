@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: theme("colors.wire.bg");
+  color: theme("colors.wire.ink");
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wireframe primitives (spec principle 1: deliberately lo-fi grey boxes). */
+@layer components {
+  .wire-box {
+    @apply border border-wire-border bg-wire-box text-wire-muted;
+  }
+  .wire-label {
+    @apply font-mono text-xs uppercase tracking-wide text-wire-muted;
+  }
+  .wire-btn {
+    @apply border border-wire-line bg-white px-4 py-2 font-mono text-sm text-wire-ink transition hover:bg-wire-box disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .wire-btn-primary {
+    @apply border border-wire-ink bg-wire-ink px-5 py-2 font-mono text-sm text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .wire-input {
+    @apply border border-wire-border bg-white px-3 py-2 font-mono text-sm outline-none focus:border-wire-ink;
+  }
+}
+
+/* Avoid text selection flicker while dragging the line thumb. */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
