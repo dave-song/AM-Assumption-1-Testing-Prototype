@@ -112,13 +112,13 @@ export default function Home() {
         {showAdvanced ? (
           <label className="block">
             <span className="wire-label">
-              fixed card order (optional, 8 ids)
+              fixed card order (optional, {cards.length} ids)
             </span>
             <input
               className="wire-input mt-1 w-full"
               value={fixedOrder}
               onChange={(e) => setFixedOrder(e.target.value)}
-              placeholder="C3 C1 C7 C2 C8 C5 C4 C6"
+              placeholder={cards.map((c) => c.id).join(" ")}
             />
             <span className="font-mono text-[11px] text-wire-muted">
               Leave blank to randomize. Invalid input is ignored.

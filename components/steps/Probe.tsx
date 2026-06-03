@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import type { StepProps } from "./types";
 import { cardById, cards } from "@/config/cards";
 import { WireframeThumb } from "@/components/ui/wireframes";
+import { DictationTextarea } from "@/components/ui/DictationTextarea";
 
 // Step 6 — Probe and reasoning (spec 5.6 / plan 13.3 G). Title-neutral.
 // Top pick (single), crossed-line set (multi), disliked set (multi), and four
@@ -142,10 +143,9 @@ export default function Probe({ session, setSession, onNext }: StepProps) {
         ).map(([key, label]) => (
           <div key={key}>
             <p className="mb-1 font-mono text-sm text-wire-ink">{label}</p>
-            <textarea
-              className="wire-input min-h-[56px] w-full"
+            <DictationTextarea
               value={notes[key]}
-              onChange={(e) => setNote(key, e.target.value)}
+              onChange={(v) => setNote(key, v)}
             />
           </div>
         ))}

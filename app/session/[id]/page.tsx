@@ -15,6 +15,7 @@ export default function SessionPage() {
   const id = params.id;
   const [session, setSession] = useState<Session | null>(null);
   const [step, setStep] = useState<number | undefined>(undefined);
+  const [cardIndex, setCardIndex] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<"loading" | "ready" | "missing">(
     "loading",
   );
@@ -22,6 +23,8 @@ export default function SessionPage() {
   useEffect(() => {
     let active = true;
     const progress = Number(localStorage.getItem(`a1_progress_${id}`)) || undefined;
+    const card = Number(localStorage.getItem(`a1_card_${id}`)) || undefined;
+    setCardIndex(card);
     const local = loadLocal(id);
     if (local) {
       setSession(local);
@@ -67,5 +70,11 @@ export default function SessionPage() {
     );
   }
 
-  return <SessionRunner initialSession={session} initialStep={step} />;
+  return (
+    <SessionRunner
+      initialSession={session}
+      initialStep={step}
+      initialCardIndex={cardIndex}
+    />
+  );
 }

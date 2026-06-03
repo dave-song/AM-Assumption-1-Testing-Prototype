@@ -90,19 +90,16 @@ export function SocialnessLine({
         {/* center hint line */}
         <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-wire-border" />
 
-        {/* ghost reference markers */}
+        {/* ghost reference markers — faint ticks for features already placed,
+            with a small diamond cap so they read as secondary to the thumb. */}
         {ghosts.map((g, i) => (
           <div
             key={i}
-            className="absolute top-0 h-full w-0.5 -translate-x-1/2 bg-wire-border/70"
+            className="pointer-events-none absolute top-0 h-full w-px -translate-x-1/2 bg-wire-border"
             style={{ left: `${g.placement}%` }}
             title={g.label}
           >
-            {g.label ? (
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] text-wire-muted">
-                {g.label}
-              </span>
-            ) : null}
+            <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border border-wire-border bg-wire-bg" />
           </div>
         ))}
 
@@ -122,6 +119,21 @@ export function SocialnessLine({
           </span>
         )}
       </div>
+
+      {/* Legend identifying each ghost marker (features placed earlier). */}
+      {ghosts.some((g) => g.label) ? (
+        <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="wire-label normal-case">placed so far:</span>
+          {[...ghosts]
+            .sort((a, b) => a.placement - b.placement)
+            .map((g, i) => (
+              <span key={i} className="font-mono text-[10px] text-wire-muted">
+                <span className="text-wire-border">◆</span> {g.label}{" "}
+                <span className="text-wire-ink">{g.placement}</span>
+              </span>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { cardById, cards } from "@/config/cards";
 import { WireframeThumb } from "@/components/ui/wireframes";
 
 // Step 5 — Compose your own (spec 5.5). Two-zone drag and drop: a fixed
-// baseline app, a tray of all eight cards, and a "Your app" drop zone. Records
+// baseline app, a tray of all the cards, and a "Your app" drop zone. Records
 // included (ordered), excluded, and a stoppedAt timestamp.
 
 function Chip({ cardId }: { cardId: string }) {

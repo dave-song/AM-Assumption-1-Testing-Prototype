@@ -3,19 +3,28 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { StepProps } from "./types";
 import type { CardResponse } from "@/types";
-import { cardById, MIDLINE_THRESHOLD } from "@/config/cards";
+import {
+  cardById,
+  MIDLINE_THRESHOLD,
+  SHOW_PRIOR_PLACEMENTS,
+} from "@/config/cards";
 import { SocialnessLine } from "@/components/ui/SocialnessLine";
 import { WireframeFrame } from "@/components/ui/WireframeFrame";
 import { Wireframe } from "@/components/ui/wireframes";
 import { AnnouncementOverlay } from "@/components/ui/AnnouncementOverlay";
+import { DictationTextarea } from "@/components/ui/DictationTextarea";
 
-// Step 4 — Card loop (spec 5.4), repeats for all 8 cards in session.cardOrder.
+// Step 4 — Card loop (spec 5.4), repeats for every card in session.cardOrder.
 // Per card: feature view -> persistent announcement (must close) -> question
 // set -> Next. Records per-step timestamps and dismissal latency.
 
 interface CardLoopProps extends StepProps {
   refireSignal: number;
   onCardChange: (cardId: string | null) => void;
+  // The current card position is owned by SessionRunner so that Back navigation
+  // can move across card boundaries. Advancing calls onNext (the runner decides
+  // whether that means "next card" or "go to Compose").
+  cardIndex: number;
 }
 
 export default function CardLoop({
@@ -25,11 +34,11 @@ export default function CardLoop({
   now,
   refireSignal,
   onCardChange,
+  cardIndex,
 }: CardLoopProps) {
-  const [idx, setIdx] = useState(0);
-  const cardId = session.cardOrder[idx];
+  const cardId = session.cardOrder[cardIndex];
   const card = cardById(cardId)!;
-  const isLast = idx === session.cardOrder.length - 1;
+  const isLast = cardIndex === session.cardOrder.length - 1;
 
   // Per-card working state, committed to the session on advance.
   const [shownAt, setShownAt] = useState<number>(now());
@@ -44,10 +53,32 @@ export default function CardLoop({
 
   const fireTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // On entering a card: reset state, schedule the announcement.
+  // On entering a card: either hydrate a previously answered card (when the
+  // participant navigates Back to it) or set up a fresh one. A card that was
+  // already completed does NOT re-fire its announcement — the participant has
+  // already acknowledged it, so we restore their answers and skip the gate.
   useEffect(() => {
-    const t = now();
-    setShownAt(t);
+    onCardChange(cardId);
+    if (fireTimer.current) clearTimeout(fireTimer.current);
+
+    const saved = session.cards.find((c) => c.cardId === cardId);
+    const alreadyDone = !!saved && saved.announcementDismissedAt !== null;
+
+    if (alreadyDone && saved) {
+      setShownAt(saved.shownAt || now());
+      setFiredAt(saved.announcementFiredAt);
+      setDismissedAt(saved.announcementDismissedAt);
+      setShowOverlay(false);
+      setKeep(saved.keep);
+      setPlacement(saved.linePlacement);
+      setFamiliarity(saved.familiarity);
+      setWhy(saved.why);
+      setDisambig(saved.disambiguation);
+      return;
+    }
+
+    // Fresh card: reset and schedule the auto-firing announcement.
+    setShownAt(now());
     setFiredAt(null);
     setDismissedAt(null);
     setShowOverlay(false);
@@ -56,9 +87,7 @@ export default function CardLoop({
     setFamiliarity(null);
     setWhy("");
     setDisambig(null);
-    onCardChange(cardId);
 
-    if (fireTimer.current) clearTimeout(fireTimer.current);
     fireTimer.current = setTimeout(() => {
       setFiredAt(now());
       setShowOverlay(true);
@@ -68,7 +97,7 @@ export default function CardLoop({
       if (fireTimer.current) clearTimeout(fireTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx]);
+  }, [cardIndex]);
 
   // Facilitator re-fire: re-show the overlay and stamp a fresh fired time.
   useEffect(() => {
@@ -82,6 +111,20 @@ export default function CardLoop({
   const dismissed = dismissedAt !== null;
   const showDisambig =
     placement !== null && placement > MIDLINE_THRESHOLD;
+
+  // Features placed on previous cards, shown as faint reference markers on the
+  // line (config-gated; see SHOW_PRIOR_PLACEMENTS for the anchoring tradeoff).
+  const priorGhosts = SHOW_PRIOR_PLACEMENTS
+    ? session.cards
+        .filter((c) => c.cardId !== cardId && c.linePlacement !== null)
+        .map((c) => {
+          const cap = cardById(c.cardId)?.caption ?? c.cardId;
+          return {
+            placement: c.linePlacement as number,
+            label: cap.length > 26 ? `${cap.slice(0, 25)}…` : cap,
+          };
+        })
+    : [];
 
   const canAdvance =
     dismissed &&
@@ -100,7 +143,7 @@ export default function CardLoop({
     const answeredAt = now();
     const response: CardResponse = {
       cardId,
-      position: idx,
+      position: cardIndex,
       shownAt,
       announcementFiredAt: firedAt,
       announcementDismissedAt: dismissedAt,
@@ -116,18 +159,14 @@ export default function CardLoop({
       cards: s.cards.map((c) => (c.cardId === cardId ? response : c)),
     }));
 
-    if (isLast) {
-      onCardChange(null);
-      onNext();
-    } else {
-      setIdx((i) => i + 1);
-    }
+    if (isLast) onCardChange(null);
+    onNext(); // SessionRunner advances to the next card or to Compose.
   };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <p className="font-mono text-xs text-wire-muted">
-        {idx + 1} of {session.cardOrder.length}
+        {cardIndex + 1} of {session.cardOrder.length}
       </p>
 
       {/* Feature view with the persistent announcement overlay on top. */}
@@ -177,7 +216,11 @@ export default function CardLoop({
             <p className="mb-2 font-mono text-sm text-wire-ink">
               Place this on the line.
             </p>
-            <SocialnessLine value={placement} onChange={setPlacement} />
+            <SocialnessLine
+              value={placement}
+              onChange={setPlacement}
+              ghosts={priorGhosts}
+            />
           </div>
 
           {/* Familiarity */}
@@ -213,11 +256,7 @@ export default function CardLoop({
             <p className="mb-2 font-mono text-sm text-wire-ink">
               What made you put it there?
             </p>
-            <textarea
-              className="wire-input min-h-[64px] w-full"
-              value={why}
-              onChange={(e) => setWhy(e.target.value)}
-            />
+            <DictationTextarea value={why} onChange={setWhy} />
           </div>
 
           {/* Conditional disambiguation */}

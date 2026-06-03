@@ -14,7 +14,7 @@ build spec. See [Mapping to the spec](#mapping-to-the-spec) for traceability.
 ## What it does
 
 1. Walks the participant through the fixed session sequence — baseline, line
-   calibration, eight cards, compose, probe.
+   calibration, the feature cards (11 by default), compose, probe.
 2. Shows rough grey-box wireframes of each feature plus a baseline music-app
    wireframe (deliberately lo-fi, no branding).
 3. Fires each card's social event as a **persistent notification the participant
@@ -65,10 +65,13 @@ panel return 401 until they match.
 1. Open the app. On **Setup**, enter a participant ID and confirm consent. A
    randomized `cardOrder` is generated and logged. (Optional: under *facilitator
    options*, paste a fixed 8-card order for the pilot.)
-2. Hand the device to the participant. The flow is **forward-only**; closing the
-   tab mid-session warns first, and progress autosaves so it can be resumed.
+2. Hand the device to the participant. A **← Back** control (top-left) lets them
+   return one page at a time — including card-by-card within the 8-card loop.
+   Previous answers are preserved on return, and an announcement they already
+   acknowledged does **not** re-fire. Closing the browser tab mid-session still
+   warns first, and progress autosaves so a session can be resumed.
 3. The participant works through: Baseline → Line intro → Calibration →
-   8 cards → Compose → Probe → Done.
+   the feature cards (11 by default) → Compose → Probe → Done.
 4. On **Done**, the record is finalized, saved, synced, and a per-session JSON
    export button is offered as a guaranteed escape hatch. "Start a new session"
    returns to setup for the next participant.
@@ -78,6 +81,19 @@ Press **Ctrl + Shift + F** and enter `FACILITATOR_KEY`. From there the moderator
 can see the current step, **re-fire** the current card's announcement, **add an
 observation note** to the current card, and **end the session** early. Notes are
 saved to the session record.
+
+### Voice input on freeform answers
+Every long text field (the per-card "why" and the four probe prompts) has a
+**mic button** for real-time dictation, so participants can talk instead of
+type. Tap it, allow mic access at the browser prompt, and speech is transcribed
+live into the field (appended to anything already typed); tap again to stop.
+Typing always still works, and the captured text is identical either way.
+
+Uses the browser-native Web Speech API — no backend or API key. Requirements:
+a **secure context** (localhost or HTTPS, e.g. Vercel) and a supporting browser
+(**Chrome, Edge, or Safari**; not Firefox). Where it's unavailable the mic is
+hidden and the field is a plain textarea. Run a quick mic test on the session
+device before your first participant.
 
 ---
 
@@ -137,9 +153,18 @@ server:
 
 All cards, captions, announcements, and **team-coded properties** live in
 [`config/cards.ts`](config/cards.ts) — edit them without touching app logic.
-Participant-facing strings must never contain construct words. Also configurable
-there: `MIDLINE_THRESHOLD` (disambiguation trigger, default 55) and the neutral
-line pole labels.
+Add or remove cards by editing the `cards` array; everything (progress count,
+randomization, compose tray, probe lists, export) derives from it, so no other
+file needs to change. Participant-facing strings must never contain construct
+words. Also configurable there: `MIDLINE_THRESHOLD` (disambiguation trigger,
+default 55) and the neutral line pole labels.
+
+**The set is 11 cards (C1–C11).** C1–C8 are the original feature set; C9–C11 are
+concept-derived to fill gaps the originals miss: **C9 Song gift** (`obligation`
+with no audience — a relational reciprocity case), **C10 Listening character**
+(`private` — the only self-only card; its wireframe deliberately shows no
+share/visible-to-others affordance), and **C11 Exclusive status** (`comparison` +
+`audience` + `visibility` — a worn-badge status flex, distinct from C8 rank).
 
 **Locked decisions** (spec Section 16), encoded in config comments:
 - Announcements **auto-fire** after a short delay, with facilitator re-fire.
@@ -177,6 +202,7 @@ components/
   ui/AnnouncementOverlay.tsx   persistent must-close notification
   ui/WireframeFrame.tsx        music-app shell + fake now-playing bar
   ui/wireframes/*              grey-box feature wireframes (wf_*)
+  ui/DictationTextarea.tsx     freeform field with real-time voice input
   ui/FacilitatorPanel.tsx      in-session moderator controls
 config/cards.ts                content + hidden team coding
 lib/

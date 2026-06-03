@@ -35,18 +35,26 @@ export default function Baseline({ session, setSession, onNext, now }: StepProps
         </WireframeFrame>
 
         <WireframeFrame caption="Your library">
-          <div className="space-y-2">
-            <div className="wire-box flex h-10 items-center px-2">
-              <span className="wire-label">playlists</span>
-            </div>
-            <div className="wire-box flex h-10 items-center px-2">
-              <span className="wire-label">recently played</span>
-            </div>
-            <div className="wire-box flex h-10 items-center px-2">
-              <span className="wire-label">your songs</span>
-            </div>
-            <div className="wire-box flex h-10 items-center px-2">
-              <span className="wire-label">albums</span>
+          <div className="space-y-3">
+            {["playlists", "recently played", "your songs", "albums"].map(
+              (label) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 border border-wire-border bg-white px-2 py-2"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center border border-wire-border bg-wire-box font-mono text-sm text-wire-line">
+                    ♪
+                  </span>
+                  <span className="wire-label flex-1">{label}</span>
+                  <span className="font-mono text-wire-line">›</span>
+                </div>
+              ),
+            )}
+            <span className="wire-label">recently played</span>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="aspect-square border border-wire-border bg-wire-box" />
+              <div className="aspect-square border border-wire-border bg-wire-box" />
+              <div className="aspect-square border border-wire-border bg-wire-box" />
             </div>
           </div>
         </WireframeFrame>

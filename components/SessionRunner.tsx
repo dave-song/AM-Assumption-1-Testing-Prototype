@@ -34,17 +34,29 @@ const progressKey = (id: string) => `a1_progress_${id}`;
 export default function SessionRunner({
   initialSession,
   initialStep,
+  initialCardIndex,
 }: {
   initialSession: Session;
   initialStep?: number;
+  initialCardIndex?: number;
 }) {
   const now = useCallback(() => Date.now(), []);
   const [session, setSessionState] = useState<Session>(initialSession);
   const [step, setStep] = useState<number>(
     initialStep && initialStep >= FIRST_STEP ? initialStep : FIRST_STEP,
   );
+  // Card position is owned here so Back can cross card boundaries. The resume
+  // value is read in the session page (client-only) and passed in, so a reload
+  // returns to the right card rather than restarting the loop.
+  const [cardIndex, setCardIndex] = useState<number>(initialCardIndex ?? 0);
   const [refireSignal, setRefireSignal] = useState(0);
   const [currentCardId, setCurrentCardId] = useState<string | null>(null);
+
+  const lastCardIndex = session.cardOrder.length - 1;
+
+  useEffect(() => {
+    localStorage.setItem(`a1_card_${session.id}`, String(cardIndex));
+  }, [cardIndex, session.id]);
 
   const setSession = useCallback(
     (updater: (s: Session) => Session) => setSessionState((s) => updater(s)),
@@ -90,7 +102,29 @@ export default function SessionRunner({
     [step, now],
   );
 
-  const onNext = useCallback(() => goTo(step + 1), [goTo, step]);
+  // Forward: within the card loop, advance card-by-card, then on to Compose.
+  const onNext = useCallback(() => {
+    if (step === 4 && cardIndex < lastCardIndex) {
+      setCardIndex((i) => i + 1);
+    } else {
+      goTo(step + 1);
+    }
+  }, [goTo, step, cardIndex, lastCardIndex]);
+
+  // Back: one page at a time. Across the card loop this means card-by-card;
+  // entering the loop from Compose lands on the last card. Answers are preserved
+  // (CardLoop hydrates them) and already-seen announcements do not re-fire.
+  const canGoBack = step >= FIRST_STEP + 1 && step < DONE_STEP;
+  const onBack = useCallback(() => {
+    if (step === 4 && cardIndex > 0) {
+      setCardIndex((i) => i - 1);
+    } else if (step === 5) {
+      setCardIndex(lastCardIndex);
+      goTo(4);
+    } else if (step > FIRST_STEP) {
+      goTo(step - 1);
+    }
+  }, [goTo, step, cardIndex, lastCardIndex]);
 
   // --- Facilitator actions --------------------------------------------------
   const addNote = useCallback(
@@ -126,6 +160,7 @@ export default function SessionRunner({
             {...stepProps}
             refireSignal={refireSignal}
             onCardChange={setCurrentCardId}
+            cardIndex={cardIndex}
           />
         );
       case 5:
@@ -139,12 +174,24 @@ export default function SessionRunner({
 
   return (
     <main className="min-h-screen px-4 py-8">
-      <header className="mx-auto mb-8 flex max-w-4xl items-center justify-between">
+      <header className="mx-auto mb-4 flex max-w-4xl items-center justify-between">
         <span className="wire-label">listening study</span>
         <span className="wire-label">
           {STEPS[step]} · {Math.min(step, DONE_STEP)}/{DONE_STEP}
         </span>
       </header>
+
+      {/* Back navigation. Moves one page at a time (card-by-card in the loop);
+          previous answers are preserved when returning. */}
+      <div className="mx-auto mb-6 max-w-4xl">
+        {canGoBack ? (
+          <button className="wire-btn" onClick={onBack}>
+            ← Back
+          </button>
+        ) : (
+          <span className="inline-block h-[38px]" aria-hidden />
+        )}
+      </div>
 
       {render()}
 
