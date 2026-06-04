@@ -189,7 +189,7 @@ export default function CardLoop({
         <p className="text-center font-mono text-xs text-wire-muted">
           {firedAt === null
             ? "…"
-            : "Close the notification to continue."}
+            : "Close the scenario to continue."}
         </p>
       ) : (
         <div className="space-y-6 border-t border-wire-border pt-6">

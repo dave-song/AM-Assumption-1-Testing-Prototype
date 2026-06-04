@@ -42,3 +42,25 @@ body {
   -webkit-user-select: none;
   touch-action: none;
 }
+
+/* Print / "Save as PDF" — used by the researcher report export. Only the
+   selected session's report should print; the app chrome (sidebar, buttons,
+   gate) is hidden via the Tailwind `print:hidden` variant. We force colour so
+   the bar charts and highlights survive the print pipeline, and avoid breaking
+   a panel across two pages where we can. */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: #fff;
+  }
+  @page {
+    margin: 1.4cm;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

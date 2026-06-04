@@ -21,7 +21,7 @@ export function AnnouncementOverlay({
     <div className="absolute inset-0 z-30 flex items-start justify-center bg-black/30 p-4">
       <div className="mt-6 w-full max-w-xs border-2 border-wire-ink bg-white shadow-lg">
         <div className="border-b border-wire-border px-3 py-2">
-          <span className="wire-label">notification</span>
+          <span className="wire-label">scenario</span>
         </div>
         <div className="px-3 py-4">
           <p className="font-mono text-sm font-bold text-wire-ink">

@@ -1,5 +1,5 @@
 import type { CardResponse, Property, Session } from "@/types";
-import { cardById, cardName } from "@/config/cards";
+import { cardById, cardName, cards } from "@/config/cards";
 
 // ---------------------------------------------------------------------------
 // Downstream analysis helpers shared by the admin view and the CSV export.
@@ -43,6 +43,147 @@ export function stepDwellMs(session: Session, step: number): number | null {
   const t = session.stepTimings.find((x) => x.step === step);
   if (!t || t.exitedAt === null) return null;
   return t.exitedAt - t.enteredAt;
+}
+
+// How long the participant took to decide on a feature card: from the moment
+// the card was shown to the moment they committed an answer (keep/kill +
+// placement). The clearest "time it took to decide" for ranking cards.
+export function decisionTimeMs(card: CardResponse): number | null {
+  if (card.answeredAt === null) return null;
+  return card.answeredAt - card.shownAt;
+}
+
+// Pure deliberation time — measured from when the scenario overlay was
+// dismissed (so it excludes the fixed scenario delay + reading time) to the
+// answer. Useful as a secondary signal next to total decision time.
+export function deliberationMs(card: CardResponse): number | null {
+  if (card.answeredAt === null || card.announcementDismissedAt === null)
+    return null;
+  return card.answeredAt - card.announcementDismissedAt;
+}
+
+// Cards ranked slowest-first by decision time, dropping any card the
+// participant never answered (no decision to time).
+export function cardsByDecisionTime(
+  session: Session,
+): { card: CardResponse; ms: number }[] {
+  return session.cards
+    .map((card) => ({ card, ms: decisionTimeMs(card) }))
+    .filter((x): x is { card: CardResponse; ms: number } => x.ms !== null)
+    .sort((a, b) => b.ms - a.ms);
+}
+
+// --- Cross-session aggregation (the "All sessions" view) -------------------
+// Helpers operate on whatever data exists — a metric is computed only over the
+// responses that actually carry it, and `n` reports the sample size so a
+// researcher can judge how much to trust each row.
+
+function mean(xs: number[]): number | null {
+  if (xs.length === 0) return null;
+  return xs.reduce((a, b) => a + b, 0) / xs.length;
+}
+
+export interface CardAggregate {
+  cardId: string;
+  name: string;
+  n: number; // responses where keep/placement was captured
+  keepRate: number | null; // 0..1 across answered keep/kill
+  meanPlacement: number | null;
+  minPlacement: number | null;
+  maxPlacement: number | null;
+  meanFamiliarity: number | null;
+  meanDecisionMs: number | null;
+  teamSocialScore: number; // constant per card (team coding)
+  meanNoveltyGap: number | null;
+  meanRevisionShift: number | null; // debrief re-placement − first placement
+}
+
+// One aggregate row per configured feature card, in config order. Pools every
+// participant's response to that card across all sessions.
+export function aggregateByCard(sessions: Session[]): CardAggregate[] {
+  const byCard = new Map<string, CardResponse[]>();
+  for (const s of sessions) {
+    for (const c of s.cards) {
+      const list = byCard.get(c.cardId);
+      if (list) list.push(c);
+      else byCard.set(c.cardId, [c]);
+    }
+  }
+
+  return cards.map((cfg) => {
+    const resp = byCard.get(cfg.id) ?? [];
+    const keepDecisions = resp.filter((c) => c.keep !== null);
+    const placements = resp
+      .map((c) => c.linePlacement)
+      .filter((p): p is number => p !== null);
+    const fams = resp
+      .map((c) => c.familiarity)
+      .filter((f): f is number => f !== null);
+    const decisions = resp
+      .map((c) => decisionTimeMs(c))
+      .filter((d): d is number => d !== null);
+    const gaps = resp
+      .map((c) => noveltyGap(c))
+      .filter((g): g is number => g !== null);
+    const shifts = resp
+      .map((c) =>
+        c.revisedPlacement !== null &&
+        c.revisedPlacement !== undefined &&
+        c.linePlacement !== null
+          ? c.revisedPlacement - c.linePlacement
+          : null,
+      )
+      .filter((s): s is number => s !== null);
+
+    return {
+      cardId: cfg.id,
+      name: cfg.name,
+      n: resp.filter((c) => c.keep !== null || c.linePlacement !== null).length,
+      keepRate:
+        keepDecisions.length === 0
+          ? null
+          : keepDecisions.filter((c) => c.keep === true).length /
+            keepDecisions.length,
+      meanPlacement: mean(placements),
+      minPlacement: placements.length ? Math.min(...placements) : null,
+      maxPlacement: placements.length ? Math.max(...placements) : null,
+      meanFamiliarity: mean(fams),
+      meanDecisionMs: decisions.length ? mean(decisions) : null,
+      teamSocialScore: teamSocialScore(cfg.properties),
+      meanNoveltyGap: mean(gaps),
+      meanRevisionShift: shifts.length ? mean(shifts) : null,
+    };
+  });
+}
+
+export interface SessionsOverview {
+  total: number;
+  completed: number;
+  inProgress: number;
+  meanCompletionMs: number | null;
+  meanCardsAnswered: number | null;
+  overallMeanNoveltyGap: number | null;
+}
+
+export function sessionsOverview(sessions: Session[]): SessionsOverview {
+  const completed = sessions.filter((s) => s.finishedAt !== null);
+  const completionTimes = completed
+    .map((s) => (s.finishedAt as number) - s.startedAt)
+    .filter((ms) => ms > 0);
+  const answeredCounts = sessions.map(
+    (s) => s.cards.filter((c) => c.keep !== null || c.linePlacement !== null).length,
+  );
+  const allGaps = sessions.flatMap((s) =>
+    s.cards.map((c) => noveltyGap(c)).filter((g): g is number => g !== null),
+  );
+  return {
+    total: sessions.length,
+    completed: completed.length,
+    inProgress: sessions.length - completed.length,
+    meanCompletionMs: completionTimes.length ? mean(completionTimes) : null,
+    meanCardsAnswered: sessions.length ? mean(answeredCounts) : null,
+    overallMeanNoveltyGap: allGaps.length ? mean(allGaps) : null,
+  };
 }
 
 // --- Flatten to CSV (one row per card response + session columns) ----------
