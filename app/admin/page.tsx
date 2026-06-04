@@ -371,7 +371,6 @@ function SessionDetail({ session: s }: { session: Session }) {
                 <Th>dismiss</Th>
                 <Th title="hidden team-coded properties">team props</Th>
                 <Th title="team social score − line placement">novelty gap</Th>
-                <Th>why</Th>
               </tr>
             </thead>
             <tbody>
@@ -379,10 +378,8 @@ function SessionDetail({ session: s }: { session: Session }) {
                 const cfg = cardById(c.cardId);
                 const gap = noveltyGap(c);
                 return (
-                  <tr
-                    key={c.cardId}
-                    className="border-b border-wire-border/50 align-top"
-                  >
+                  <React.Fragment key={c.cardId}>
+                    <tr className="align-top">
                     <Td>{c.position + 1}</Td>
                     <Td>
                       <span className="text-wire-ink">{cfg?.name ?? c.cardId}</span>
@@ -427,10 +424,19 @@ function SessionDetail({ session: s }: { session: Session }) {
                         {gap ?? "—"}
                       </span>
                     </Td>
-                    <Td>
-                      <span className="text-wire-ink">{c.why || "—"}</span>
-                    </Td>
-                  </tr>
+                    </tr>
+                    {/* "why" spans the full table width on its own row so the
+                        long free-text answer is readable instead of cramped
+                        into a narrow column. */}
+                    <tr className="border-b border-wire-border/50">
+                      <td colSpan={11} className="px-2 pb-3 pt-0 align-top">
+                        <span className="text-wire-muted">why: </span>
+                        <span className="whitespace-pre-wrap text-wire-ink">
+                          {c.why || "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 );
               })}
             </tbody>
