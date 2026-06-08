@@ -22,7 +22,13 @@ export interface CardConfig {
   id: string; // 'C1'..'C8'
   name: string; // internal label, never shown to participant
   caption: string; // neutral participant-facing caption, no construct words
-  wireframe: string; // key mapping to a wireframe component
+  // Text description of the idea DIRECTION shown in place of a feature mockup.
+  // Deliberately text-only: a wireframe is one execution of the idea, and judging
+  // an execution conflates "do I like this idea" with "do I like how it looks /
+  // how detailed it is" (the execution/ideation gap). Same no-construct-word rule
+  // as caption — no "social", "private", or property names (spec principle 2).
+  description: string;
+  wireframe: string; // key mapping to a wireframe component (thumbnails/anchors)
   announcement: Announcement;
   properties: Property[]; // team-coded, hidden, exported
 }

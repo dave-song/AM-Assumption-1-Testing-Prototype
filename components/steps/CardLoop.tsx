@@ -10,7 +10,6 @@ import {
 } from "@/config/cards";
 import { SocialnessLine } from "@/components/ui/SocialnessLine";
 import { WireframeFrame } from "@/components/ui/WireframeFrame";
-import { Wireframe } from "@/components/ui/wireframes";
 import { AnnouncementOverlay } from "@/components/ui/AnnouncementOverlay";
 import { DictationTextarea } from "@/components/ui/DictationTextarea";
 
@@ -172,10 +171,16 @@ export default function CardLoop({
         {cardIndex + 1} of {session.cardOrder.length}
       </p>
 
-      {/* Feature view with the persistent announcement overlay on top. */}
-      <div className="relative mx-auto max-w-xs">
+      {/* Idea presented as text only (no feature mockup): a wireframe is one
+          execution of the idea, and reacting to an execution conflates "do I
+          like the idea" with "do I like how it looks." We show the idea
+          direction in words so the placement reflects the concept, not the
+          render. The persistent announcement overlay still fires on top. */}
+      <div className="relative mx-auto max-w-sm">
         <WireframeFrame caption={card.caption}>
-          <Wireframe name={card.wireframe} />
+          <p className="font-mono text-sm leading-relaxed text-wire-ink">
+            {card.description}
+          </p>
         </WireframeFrame>
         {showOverlay ? (
           <AnnouncementOverlay

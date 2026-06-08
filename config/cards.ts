@@ -72,6 +72,8 @@ export const cards: CardConfig[] = [
     id: "C1",
     name: "Aggregate listen count",
     caption: "Shows how many people are listening",
+    description:
+      "While you listen, the app shows how many other people are listening to the same song or artist at the same time — a sense that you are not listening alone, and that others are tuned into the same track right now.",
     wireframe: "wf_listen_count",
     properties: ["comparison"],
     announcement: { title: "1.2M listening now", body: "and climbing.", delayMs: 5000 },
@@ -80,6 +82,8 @@ export const cards: CardConfig[] = [
     id: "C2",
     name: "Friend presence",
     caption: "Shows a friend listening to this",
+    description:
+      "While you listen, the app reveals when your friends or connected users are listening to the same song or artist at the same time — so you can feel that someone you know is sharing the moment with you.",
     wireframe: "wf_friend_presence",
     properties: ["visibility"],
     announcement: { title: "Maya is listening to this too", body: "right now.", delayMs: 5000 },
@@ -88,6 +92,8 @@ export const cards: CardConfig[] = [
     id: "C3",
     name: "Friend-activity feed",
     caption: "A feed of what friends played",
+    description:
+      "You can see a feed of what your friends have been playing — their listening history over time. How much of it you can see is still open: it might be just the last thing they played, or a fuller feed of everything they have recently listened to.",
     wireframe: "wf_activity_feed",
     properties: ["visibility"],
     announcement: { title: "New in your friends feed", body: "Sam played 3 tracks.", delayMs: 5000 },
@@ -96,6 +102,8 @@ export const cards: CardConfig[] = [
     id: "C4",
     name: "Public taste profile",
     caption: "Your listening, visible to others",
+    description:
+      "Your profile page becomes something others can see — a richer, more expressive page where you can lay out your music taste, top tracks, and other things about how you listen. The exact details are open; this is an exploratory direction toward a more public, creative profile.",
     wireframe: "wf_public_profile",
     properties: ["visibility", "audience"],
     announcement: { title: "3 people viewed your profile", body: "this week.", delayMs: 5000 },
@@ -104,6 +112,8 @@ export const cards: CardConfig[] = [
     id: "C5",
     name: "Reactions and comments",
     caption: "React or comment on a track",
+    description:
+      "While listening to a song, people can leave comments or reactions on it — much like SoundCloud, where listeners respond to a track and can see what others have said.",
     wireframe: "wf_reactions",
     properties: ["obligation", "audience", "visibility"],
     announcement: { title: "Someone reacted", body: "to the track you are playing.", delayMs: 5000 },
@@ -112,6 +122,8 @@ export const cards: CardConfig[] = [
     id: "C6",
     name: "Post or share status",
     caption: "Post what you are listening to",
+    description:
+      "You can tag the song or artist you are listening to and post it — sharing what you are playing and how you are feeling about it, as a feed others can see.",
     wireframe: "wf_post_status",
     properties: ["audience", "visibility"],
     announcement: { title: "Your post is live", body: "in the feed.", delayMs: 5000 },
@@ -120,6 +132,8 @@ export const cards: CardConfig[] = [
     id: "C7",
     name: "Visible to friends",
     caption: "Friends can see you are listening",
+    description:
+      "People connected to you can see what you are listening to in real time. The reach is flexible: it could be everyone you are connected with, or a smaller listening group you pick, where only that group sees your real-time updates and you can share and mix together.",
     wireframe: "wf_visible_to_friends",
     properties: ["visibility"],
     announcement: { title: "A friend saw you", body: "listening to this.", delayMs: 5000 },
@@ -128,6 +142,8 @@ export const cards: CardConfig[] = [
     id: "C8",
     name: "Fan rank",
     caption: "Your rank among listeners",
+    description:
+      "You get a rank among an artist's listeners, based on how much you engage — listening time and other signals. For example, you might be the #7 listener for an artist, and you can see the people ranked just above and below you, much like a Duolingo-style leaderboard.",
     wireframe: "wf_fan_rank",
     // Decision locked (spec 16.3): rank is EXPOSED — others can see your rank.
     properties: ["comparison", "visibility"],
@@ -141,6 +157,8 @@ export const cards: CardConfig[] = [
     id: "C9",
     name: "Song gift from a friend",
     caption: "A friend sent you this song with a note",
+    description:
+      "People can give and receive annotated \"gifts\" — a part of a song, or a whole song — from friends and connections. There could also be a scavenger-hunt element, where listening to a song again and again reveals hidden gifts like photos or voice memos that an artist left behind.",
     wireframe: "wf_song_gift",
     // Only obligation card WITHOUT audience — contrasts with C5 to isolate
     // whether reciprocity pressure tips people only when it is public.
@@ -155,6 +173,8 @@ export const cards: CardConfig[] = [
     id: "C10",
     name: "Personal listening character",
     caption: "Your listening shapes a character",
+    description:
+      "Imagine a music streaming platform where you have your own character — one that reflects your music taste and the way you listen. You can watch your character take shape, like how it is dressed and other details, as a reflection of your listening.",
     wireframe: "wf_character",
     // Coded private on purpose: the wireframe shows NO share / visible-to-others
     // affordance, so it reads as self-only. Anchors the quiet, low-social end.
@@ -169,6 +189,8 @@ export const cards: CardConfig[] = [
     id: "C11",
     name: "Exclusive visible status",
     caption: "A status others can see, earned by how much you listen",
+    description:
+      "Based on how much you listen to and engage with an artist over time, you earn a badge — almost an adaptive page — that you can show or share. It acknowledges the history you have built with an artist or a song, in a way others can see.",
     wireframe: "wf_exclusive_status",
     // Stacks comparison + audience + visibility (a worn badge): a high-load
     // status flex, distinct from C8 rank by adding the worn-badge audience.
