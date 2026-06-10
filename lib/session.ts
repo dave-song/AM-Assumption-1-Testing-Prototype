@@ -97,6 +97,12 @@ export function saveLocal(session: Session) {
   if (!ids.includes(session.id)) writeIndex([...ids, session.id]);
 }
 
+export function removeLocal(id: string) {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(sessionKey(id));
+  writeIndex(readIndex().filter((i) => i !== id));
+}
+
 export function loadLocal(id: string): Session | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(sessionKey(id));

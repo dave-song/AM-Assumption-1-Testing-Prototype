@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Session } from "@/types";
-import { listLocal, STEPS } from "@/lib/session";
+import { listLocal, removeLocal, STEPS } from "@/lib/session";
 import type { StoreHealth } from "@/lib/store";
 import {
   aggregateByCard,
@@ -91,6 +91,49 @@ export default function AdminPage() {
     () => sessions?.find((s) => s.id === selected) ?? null,
     [sessions, selected],
   );
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Permanently delete one session (e.g. a test run) from the server store and
+  // this device's localStorage. Gated by the same admin key used to unlock.
+  const deleteSession = async (s: Session) => {
+    const label = s.participantId || s.id.slice(0, 8);
+    if (
+      !window.confirm(
+        `Delete session "${label}"? This permanently removes its data and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(s.id);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/admin/sessions?key=${encodeURIComponent(key)}&id=${encodeURIComponent(s.id)}`,
+        { method: "DELETE" },
+      );
+      if (res.status === 401) {
+        setError("Incorrect admin key.");
+        setDeletingId(null);
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Could not delete session.");
+        setDeletingId(null);
+        return;
+      }
+    } catch {
+      // Server unavailable — still drop the local copy below.
+    }
+    removeLocal(s.id);
+    setSessions((prev) => {
+      const next = (prev ?? []).filter((x) => x.id !== s.id);
+      setSelected((cur) => (cur === s.id ? next[0]?.id ?? null : cur));
+      return next;
+    });
+    setDeletingId(null);
+  };
 
   const downloadJSON = () => {
     if (!sessions) return;
@@ -210,23 +253,36 @@ export default function AdminPage() {
           {/* Session list */}
           <aside className="space-y-1 print:hidden">
             {sessions.map((s) => (
-              <button
+              <div
                 key={s.id}
-                onClick={() => setSelected(s.id)}
-                className={`block w-full border p-2 text-left ${
+                className={`flex items-stretch border ${
                   selected === s.id
                     ? "border-wire-ink bg-wire-box"
                     : "border-wire-border bg-white"
                 }`}
               >
-                <div className="font-mono text-sm text-wire-ink">
-                  {s.participantId}
-                </div>
-                <div className="font-mono text-[11px] text-wire-muted">
-                  {fmtTime(s.startedAt)} ·{" "}
-                  {s.finishedAt ? "complete" : "in progress"}
-                </div>
-              </button>
+                <button
+                  onClick={() => setSelected(s.id)}
+                  className="min-w-0 flex-1 p-2 text-left"
+                >
+                  <div className="truncate font-mono text-sm text-wire-ink">
+                    {s.participantId}
+                  </div>
+                  <div className="font-mono text-[11px] text-wire-muted">
+                    {fmtTime(s.startedAt)} ·{" "}
+                    {s.finishedAt ? "complete" : "in progress"}
+                  </div>
+                </button>
+                <button
+                  onClick={() => deleteSession(s)}
+                  disabled={deletingId === s.id}
+                  title="Delete this session"
+                  aria-label={`Delete session ${s.participantId}`}
+                  className="shrink-0 border-l border-wire-border px-2 font-mono text-xs text-wire-muted hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                >
+                  {deletingId === s.id ? "…" : "✕"}
+                </button>
+              </div>
             ))}
           </aside>
 

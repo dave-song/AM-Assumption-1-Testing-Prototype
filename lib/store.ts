@@ -79,6 +79,17 @@ async function sbGet(id: string): Promise<Session | null> {
   return rows[0]?.data ?? null;
 }
 
+async function sbDelete(id: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?id=eq.${id}`, {
+    method: "DELETE",
+    headers: sbHeaders(),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Supabase delete failed (${res.status}): ${detail.slice(0, 300)}`);
+  }
+}
+
 async function sbList(): Promise<Session[]> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/sessions?select=data&order=created_at.desc`,
@@ -148,6 +159,13 @@ export async function getSession(id: string): Promise<Session | null> {
   if (usingSupabase) return sbGet(id);
   const map = await readFileStore();
   return map[id] ?? null;
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  if (usingSupabase) return sbDelete(id);
+  const map = await readFileStore();
+  delete map[id];
+  await writeFileStore(map);
 }
 
 export async function listSessions(): Promise<Session[]> {
